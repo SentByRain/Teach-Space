@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Teach Space
 
 ## backend
@@ -68,6 +67,38 @@ npm run dev
 | `npm run preview` | Предпросмотр продакшен-сборки              |
 | `npm run lint`    | Проверка кода линтером ESLint              |
 
+
+## CI/CD
+
+Деплой в AWS настроен через workflow [.github/workflows/aws.yml](/home/pavel/work/Teach-Space/.github/workflows/aws.yml).
+
+### Test / staging
+
+- Деплой запускается при `push` в ветку `main`.
+- Workflow собирает Docker-образ, публикует его в Amazon ECR с тегом `${{ github.sha }}` и обновляет тестовый ECS-сервис.
+- Для выкладки используется текущее определение задачи из `ECS_TASK_DEFINITION_STAGING`, после чего регистрируется новая ревизия task definition с новым образом.
+- Сервис обновляется через `aws ecs update-service`, затем pipeline ждёт состояния `services-stable`.
+
+### Production
+
+- Деплой в production запускается при пуше git-тега формата `v*.*.*`, например `v1.2.3`.
+- Docker-образ публикуется в Amazon ECR с тегом релиза `${{ github.ref_name }}`.
+- После этого workflow обновляет production ECS-сервис, используя `ECS_TASK_DEFINITION_PRODUCTION`, `ECS_CLUSTER_PRODUCTION` и `ECS_SERVICE_PRODUCTION`.
+- Pipeline также ждёт стабилизации сервиса перед завершением job.
+
+### Необходимые GitHub secrets и variables
+
+- `secrets.AWS_ACCESS_KEY_ID`
+- `secrets.AWS_SECRET_ACCESS_KEY`
+- `secrets.ECR_REPOSITORY`
+- `vars.AWS_REGION`
+- `vars.ECS_TASK_DEFINITION_STAGING`
+- `vars.ECS_CLUSTER_STAGING`
+- `vars.ECS_SERVICE_STAGING`
+- `vars.ECS_TASK_DEFINITION_PRODUCTION`
+- `vars.ECS_CLUSTER_PRODUCTION`
+- `vars.ECS_SERVICE_PRODUCTION`
+
 ## Структура проекта
 
 ```
@@ -80,5 +111,4 @@ frontend/
 │   └── styles.css   # Глобальные стили
 ├── index.html       # HTML-шаблон
 └── package.json     # Зависимости и скрипты
->>>>>>> master
 ```
